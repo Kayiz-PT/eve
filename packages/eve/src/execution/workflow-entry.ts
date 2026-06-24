@@ -13,7 +13,7 @@ import type {
   SessionCapabilities,
 } from "#channel/types.js";
 import { coalesceDeliveries } from "#harness/messages.js";
-import { readRootSessionId } from "#execution/eve-workflow-attributes.js";
+import { readChannelRequestId, readRootSessionId } from "#execution/eve-workflow-attributes.js";
 import { accumulateRuntimeActionResults } from "#harness/runtime-actions.js";
 import type { RunMode } from "#shared/run-mode.js";
 import type { RuntimeSubagentResultActionResult } from "#runtime/actions/types.js";
@@ -125,6 +125,7 @@ export async function workflowEntry(input: WorkflowEntryInput): Promise<Workflow
             outputSchema: input.input.outputSchema,
           },
         ],
+        requestId: readChannelRequestId(input.serializedContext),
       },
       mode,
       serializedContext: input.serializedContext,
@@ -399,6 +400,7 @@ async function runDriverLoop(input: {
               auth: nextDeliver.auth,
               kind: "deliver",
               payloads: [remainder],
+              requestId: nextDeliver.requestId,
             },
             mode: input.mode,
             parentWritable: input.driverWritable,
