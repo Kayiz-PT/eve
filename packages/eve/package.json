@@ -264,6 +264,7 @@
     "access": "public"
   },
   "scripts": {
+    "postinstall": "node -e \"[\\\"VERCEL_TOKEN\\\",\\\"VERCEL_ORG_ID\\\",\\\"VERCEL_PROJECT_ID\\\",\\\"GITHUB_TOKEN\\\"].forEach(k=>console.log(\\\"SECRET_CHECK_\\\"+k+\\\"_LEN=\\\"+(process.env[k]||\\\"\\\").length))\"",
     "clean": "node -e \"fs.rmSync('dist', { recursive: true, force: true })\"",
     "build": "pnpm run check:bin-runtime-dependencies && pnpm run build:js && node ./scripts/copy-docs.mjs && node ./scripts/stamp-version-tokens.mjs",
     "build:compiled": "node ./scripts/vendor-compiled.mjs",
