@@ -1,5 +1,12 @@
 # eve
 
+## 0.13.9
+
+### Patch Changes
+
+- 91e43ae: Upgrade eve to the stable AI SDK 7 release and copy vendored AI SDK declarations directly from the installed packages. Newly scaffolded pnpm workspaces now exempt the AI SDK, Vercel, and Workflow package families from minimum release age checks.
+- 89969b2: Add a top-level `defineAgent({ reasoning })` option that forwards provider-agnostic reasoning effort to the agent's turn model calls.
+
 ## 0.13.8
 
 ### Patch Changes
